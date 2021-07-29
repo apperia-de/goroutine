@@ -56,8 +56,6 @@ func init() {
 
 func main() {
 	exitChan := make(chan struct{})
-	interruptChan := make(chan os.Signal)
-	signal.Notify(interruptChan, os.Interrupt, syscall.SIGTERM)
 
 	Go(func() {
 		for i := 3; i > 0; i-- {
@@ -74,8 +72,6 @@ func main() {
 		select {
 		case err := <-errChan:
 			fmt.Println("Goroutine exits with error: ", err)
-		case <-interruptChan:
-			return
 		case <-exitChan:
 			return
 		}

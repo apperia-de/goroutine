@@ -12,7 +12,7 @@ type RecoverFunc func(v interface{})
 // The default recover function which will be used by the Go func for each goroutine.
 // Can be easily overridden with SetDefaultRecoverFunc in an init function in order to change the default behavior.
 var defaultRecoverFunc = func(v interface{}) {
-	if err, ok := v.(error); ok {
+		if err, ok := v.(error); ok {
 		fmt.Printf("Error(%T): %v\n", err, err)
 		return
 	}
