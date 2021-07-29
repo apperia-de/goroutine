@@ -81,7 +81,6 @@ func TestGo(t *testing.T) {
 	}
 
 	t.Run("Goroutine with a two param function which recovered from a panic", func(t *testing.T) {
-
 		SetDefaultRecoverFunc(func(v interface{}) { resultChan <- fmt.Sprintf("%v", v) })
 		Go(fn2, 2, 0)
 		got := <-resultChan

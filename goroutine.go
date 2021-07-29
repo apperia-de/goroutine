@@ -9,6 +9,9 @@ import (
 // The RecoverFunc type defines the signature of a recover function within a goroutine.
 type RecoverFunc func(v interface{})
 
+// The DoneChan type is defines the channel which receives only an empty struct.
+type DoneChan <-chan struct{}
+
 // The default recover function which will be used by the Go func for each goroutine.
 // Can be easily overridden with SetDefaultRecoverFunc in an init function in order to change the default behavior.
 var defaultRecoverFunc = func(v interface{}) {
@@ -29,6 +32,7 @@ func Goroutine(fn interface{}) *goroutine {
 	return &goroutine{
 		goFn:  fn,
 		recFn: defaultRecoverFunc,
+		done:  make(chan struct{}),
 	}
 }
 
@@ -47,12 +51,15 @@ func Goroutine(fn interface{}) *goroutine {
 //   panic(s)
 // }, "Hello World")
 //
-func Go(fn interface{}, params ...interface{}) {
+func Go(fn interface{}, params ...interface{}) DoneChan {
 	fnVal := reflect.ValueOf(fn)
 	if fnVal.Kind() != reflect.Func {
 		panic(fmt.Sprintf("Param \"fn\" must be a function but is a %q", fnVal.Kind()))
 	}
-	Goroutine(fn).Go(params...)
+
+	gr := Goroutine(fn)
+	gr.Go(params...)
+	return gr.done
 }
 
 // SetDefaultRecoverFunc can be used to override the defaultRecoverFunc which is used by Go and Goroutine functions.
@@ -68,16 +75,18 @@ func GetDefaultRecoverFunc() RecoverFunc {
 }
 
 type goroutine struct {
-	goFn  interface{} // The goFn function which will be called in a goroutine.
-	recFn RecoverFunc // The recFn function which will be called if a panic has been recovered with that goroutine.
+	goFn  interface{}   // The goFn function which will be called in a goroutine.
+	recFn RecoverFunc   // The recFn function which will be called if a panic has been recovered with that goroutine.
+	done  chan struct{} // The done channel indicates when a goroutine has either finished or recovered from panic.
 }
 
 // The Go method starts a new goroutine, which is panic safe. A possible panic call will be gracefully recovered by the recover function g.recFn.
-func (g *goroutine) Go(params ...interface{}) {
+func (g *goroutine) Go(params ...interface{}) DoneChan {
 	go func() {
 		defer func() {
 			if r := recover(); r != nil && g.recFn != nil {
 				g.recFn(r)
+				g.done <- struct{}{}
 			}
 		}()
 		fnVal := reflect.ValueOf(g.goFn)
@@ -92,7 +101,9 @@ func (g *goroutine) Go(params ...interface{}) {
 		}
 		// Call the function
 		fnVal.Call(in)
+		g.done <- struct{}{}
 	}()
+	return g.done
 }
 
 // WithRecoverFunc overrides the default recover function with fn.
