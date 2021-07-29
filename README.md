@@ -1,4 +1,5 @@
 # goroutine
+[![Go Report Card](https://goreportcard.com/badge/github.com/sknr/goroutine)](https://goreportcard.com/report/github.com/sknr/goroutine)
 
 A goroutine wrapper for creating and running panic safe goroutines.
 

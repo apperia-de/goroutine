@@ -56,7 +56,7 @@ func Two() {
 		fmt.Println("The panic in this goroutine has been successfully recovered and error has been logged.")
 		errChan <- fmt.Sprintf("%v", v)
 	}).Go(1, 0)
-	fmt.Println("Error:",<-errChan)
+	fmt.Println("Error:", <-errChan)
 
 	Goroutine(func(a, b int) {
 		fmt.Println(a, "/", b, "=", a/b)
