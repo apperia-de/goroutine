@@ -1,3 +1,3 @@
-module github.com/sknr/go-routine
+module github.com/sknr/goroutine
 
 go 1.16
