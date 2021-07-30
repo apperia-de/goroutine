@@ -116,6 +116,7 @@ func (g *goroutine) WithRecoverFunc(fn RecoverFunc) *goroutine {
 
 // signature returns the signature string of a given function.
 // Credits for that function goes to András Belicza (https://github.com/icza).
+// ignorecoverage
 func signature(fn interface{}) string {
 	t := reflect.TypeOf(fn)
 	if t.Kind() != reflect.Func {

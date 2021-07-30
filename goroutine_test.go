@@ -1,7 +1,11 @@
 package goroutine
 
 import (
+	"bytes"
+	"errors"
 	"fmt"
+	"io"
+	"os"
 	"testing"
 )
 
@@ -46,6 +50,10 @@ func TestGoroutine(t *testing.T) {
 		want := "runtime error: integer divide by zero"
 		assertOutput(t, got, want)
 	})
+
+	t.Run("Starting a Goroutine with wrong type which should raise a panic", func(t *testing.T) {
+		assertPanic(t, func() { Goroutine(1) })
+	})
 }
 
 func TestGo(t *testing.T) {
@@ -80,13 +88,70 @@ func TestGo(t *testing.T) {
 		})
 	}
 
+	originalRecoverFunc := GetDefaultRecoverFunc()
+
 	t.Run("Goroutine with a two param function which recovered from a panic", func(t *testing.T) {
 		SetDefaultRecoverFunc(func(v interface{}) { resultChan <- fmt.Sprintf("%v", v) })
 		Go(fn2, 2, 0)
 		got := <-resultChan
 		want := "runtime error: integer divide by zero"
 		assertOutput(t, got, want)
+		SetDefaultRecoverFunc(originalRecoverFunc)
 	})
+
+	t.Run("Goroutine with a wrong number of params which recovered from a panic", func(t *testing.T) {
+		SetDefaultRecoverFunc(func(v interface{}) { resultChan <- fmt.Sprintf("%v", v) })
+		Go(fn0, 1)
+		got := <-resultChan
+		want := "Function signature: func() | The number of params (1) does not match required function params (0)\n"
+		assertOutput(t, got, want)
+		SetDefaultRecoverFunc(originalRecoverFunc)
+	})
+
+	t.Run("Starting a Goroutine with wrong type which should raise a panic", func(t *testing.T) {
+		assertPanic(t, func() { Go(1) })
+	})
+}
+
+func TestDefaultRecoverFunc(t *testing.T) {
+	t.Run("defaultRecoverFunc: panic value is an error", func(t *testing.T) {
+		got := recordStdOut(func() { defaultRecoverFunc(errors.New("panic value is an error")) })
+		want := "Error(*errors.errorString): panic value is an error\n"
+		assertOutput(t, got, want)
+	})
+
+	t.Run("defaultRecoverFunc: panic value is an error", func(t *testing.T) {
+		got := recordStdOut(func() { defaultRecoverFunc("panic value is a string message") })
+		want := "Goroutine panic recovered: panic value is a string message\n"
+		assertOutput(t, got, want)
+	})
+}
+
+func TestSignature(t *testing.T) {
+	fn0 := struct{}{}
+	fn1 := func() {}
+	fn2 := func(a, b int) {}
+	fn3 := func(a, b int) string { return "" }
+	fn4 := func(a int) (string, error) { return "", nil }
+
+	tests := []struct {
+		name string
+		fn   interface{}
+		want string
+	}{
+		{"Is not a function", fn0, "<not a function>"},
+		{"Is a function without input params", fn1, "func()"},
+		{"Is a function with one input param", fn2, "func(int, int)"},
+		{"Is a function with two input params and one output param", fn3, "func(int, int) string"},
+		{"Is a function with one input params and two output params", fn4, "func(int) (string, error)"},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			got := signature(test.fn)
+			assertOutput(t, got, test.want)
+		})
+	}
 }
 
 func assertOutput(t *testing.T, got, want string) {
@@ -94,4 +159,33 @@ func assertOutput(t *testing.T, got, want string) {
 	if got != want {
 		t.Errorf("got %q, want %q", got, want)
 	}
+}
+
+func assertPanic(t *testing.T, fn func()) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Errorf("The code did not panic")
+		}
+	}()
+	fn() // Run the panic function
+}
+
+func recordStdOut(fn func()) string {
+	old := os.Stdout // Keep backup of the real stdout
+	r, w, _ := os.Pipe()
+	os.Stdout = w
+
+	fn() // Run the function
+
+	outC := make(chan string)
+	// Copy the output in a separate goroutine so printing can't block indefinitely
+	go func() {
+		var buf bytes.Buffer
+		_, _  = io.Copy(&buf, r)
+		outC <- buf.String()
+	}()
+	// Back to normal state
+	_ = w.Close()
+	os.Stdout = old // Restoring the real stdout
+	return <-outC
 }
