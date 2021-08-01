@@ -18,22 +18,40 @@ that goroutine.
 Instead of running
 
 ```
-go func(s string) {
-    panic(s)
-}("Hello World")
+go func() {
+    panic("Panic raised in goroutine")
+}()
 ```
 
 simply call
 
 ```
 Go(func() {
-    func(s string) {
-        panic(s)
-    }("Hello World")
+    panic("Panic raised in goroutine")
 })
 ```
-
 in order to create a panic safe goroutine.
+
+Functions with multiple input params must be wrapped within an anonymous function. 
+
+Instead of running
+
+
+```
+go func(a, b int) {
+    panic(a+b)
+}(21,21)
+```
+
+simply call
+
+```
+Go(func() {
+    func(a, b int) {
+        panic(a+b)
+    }(21,21)
+})
+```
 
 ## Examples
 
@@ -93,9 +111,11 @@ with `goroutine.SetDefaultRecoverFunc`.
 If you need different recover functions for different goroutines, you can simply call
 
 ```
-Goroutine(func(name string) {
-    panic(fmt.Sprintln("Hallo", name))
-}).WithRecoverFunc(func(v interface{}) {
+Goroutine(func() {
+    func(name string) {
+        panic(fmt.Sprintln("Hallo", name))
+    }("Welt")
+}).WithRecoverFunc(func(v interface{}, done chan<- error) {
     log.Printf("Custom recover function in goroutine, with error: %v", v)
-}).Go("Welt")
+}).Go()
 ```

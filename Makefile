@@ -1,4 +1,4 @@
-final-check: build mod-tidy test test-code-coverage lint
+final-check: build mod-tidy test test-code-coverage static-check
 
 build:
 	go build
@@ -9,7 +9,7 @@ test:
 test-verbose:
 	go test -v
 
-lint:
+lint static-check:
 	golangci-lint run
 
 test-code-coverage:
