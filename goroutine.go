@@ -80,10 +80,10 @@ func (g *goroutine) Go() DoneChan {
 					WithRecoverFunc(func(v interface{}) { fmt.Printf("Recover function panicked: %v\n", v) }).
 					Go()
 			}
-			done <- struct{}{}
+			// Lastly we need to close the done channel in order to prevent memory leakage.
+			close(done)
 		}()
 		g.f()
-		done <- struct{}{}
 	}()
 	return done
 }

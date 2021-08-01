@@ -41,14 +41,13 @@ func TestGoroutine(t *testing.T) {
 	}
 
 	tests := []struct {
-		name   string
-		f      func()
-		params []interface{}
-		want   string
+		name string
+		f    func()
+		want string
 	}{
-		{"Goroutine with a zero param function", f0, []interface{}{}, "Hallo Welt"},
-		{"Goroutine with a one param function", f1, []interface{}{"GoWorld"}, "Hallo GoWorld"},
-		{"Goroutine with a two param function", f2, []interface{}{42, 2}, "42 / 2 = 21"},
+		{"Goroutine with a zero param function", f0, "Hallo Welt"},
+		{"Goroutine with a one param function", f1, "Hallo GoWorld"},
+		{"Goroutine with a two param function", f2, "42 / 2 = 21"},
 	}
 
 	for _, test := range tests {
