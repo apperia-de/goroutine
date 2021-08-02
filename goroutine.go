@@ -5,10 +5,14 @@ import (
 )
 
 var (
-	ErrPanicRecovered          = &goroutineError{msg: "panic recovered"}
+	// ErrPanicRecovered is returned via done channel if a panic arises within the goroutine.
+	ErrPanicRecovered = &goroutineError{msg: "panic recovered"}
+
+	// ErrRecoverFunctionPanicked is returned via done channel if a panic arises within the
+	// goroutine and also within the recover function.
 	ErrRecoverFunctionPanicked = &goroutineError{msg: "recover function panicked"}
 
-	// The default recover function which will be used by the Go func for each goroutine.
+	// The default recover function which will be used by the Go and Goroutine functions for each new goroutine.
 	// Can be easily overridden with SetDefaultRecoverFunc in an init function in order to change the default behavior.
 	defaultRecoverFunc = func(v interface{}, done chan<- error) {
 		done <- ErrPanicRecovered.WithValue(v)
