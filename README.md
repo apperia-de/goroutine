@@ -13,6 +13,10 @@ could crash the whole application.
 The `Go` function runs an arbitrary function *f* in a separate goroutine, which handles the recovering from panic within
 that goroutine.
 
+## Installation
+
+`go get -u github.com/sknr/goroutine`
+
 ## Usage (with dot import)
 
 Instead of running
@@ -30,12 +34,12 @@ Go(func() {
     panic("Panic raised in goroutine")
 })
 ```
+
 in order to create a panic safe goroutine.
 
-Functions with multiple input params must be wrapped within an anonymous function. 
+Functions with multiple input params must be wrapped within an anonymous function.
 
 Instead of running
-
 
 ```
 go func(a, b int) {
