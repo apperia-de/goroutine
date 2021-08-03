@@ -14,7 +14,7 @@ var (
 
 	// The default recover function which will be used by the Go and Goroutine functions for each new goroutine.
 	// Can be easily overridden with SetDefaultRecoverFunc in an init function in order to change the default behavior.
-	defaultRecoverFunc = func(v interface{}, done chan<- error) {
+	defaultRecoverFunc RecoverFunc = func(v interface{}, done chan<- error) {
 		done <- ErrPanicRecovered.WithValue(v)
 	}
 )
