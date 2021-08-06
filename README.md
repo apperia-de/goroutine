@@ -1,8 +1,8 @@
 # goroutine
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/sknr/Goroutine)](https://goreportcard.com/report/github.com/sknr/Goroutine)
-![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/sknr/Goroutine?style=flat)
-![GitHub](https://img.shields.io/github/license/sknr/Goroutine)
+[![Go Report Card](https://goreportcard.com/badge/github.com/sknr/goroutine)](https://goreportcard.com/report/github.com/sknr/goroutine)
+![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/sknr/goroutine?style=flat)
+![GitHub](https://img.shields.io/github/license/sknr/goroutine)
 
 A goroutine wrapper for creating and running panic safe goroutines.
 
@@ -15,7 +15,7 @@ that goroutine.
 
 ## Installation
 
-`go get -u github.com/sknr/Goroutine`
+`go get -u github.com/sknr/goroutine`
 
 ## Usage (with dot import)
 
@@ -23,7 +23,7 @@ Instead of running
 
 ```
 go func() {
-    panic("Panic raised in Goroutine")
+    panic("Panic raised in goroutine")
 }()
 ```
 
@@ -31,7 +31,7 @@ simply call
 
 ```
 Go(func() {
-    panic("Panic raised in Goroutine")
+    panic("Panic raised in goroutine")
 })
 ```
 
@@ -105,6 +105,6 @@ goroutine.New(func() {
         panic(fmt.Sprintln("Hallo", name))
     }("Welt")
 }).WithRecoverFunc(func(v interface{}, done chan<- error) {
-    log.Printf("Custom recover function in Goroutine, with error: %v", v)
+    log.Printf("Custom recover function in goroutine, with error: %v", v)
 }).Go()
 ```
