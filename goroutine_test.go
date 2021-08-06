@@ -1,9 +1,9 @@
-package goroutine
+package goroutine_test
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
+	"github.com/sknr/goroutine"
 	"io"
 	"os"
 	"reflect"
@@ -31,13 +31,16 @@ func TestGoroutine(t *testing.T) {
 		}(42, 0)
 	}
 	f4 := func() {
-		panic("Error in Goroutine")
+		panic("panicError in Goroutine")
 	}
-	recF0 := func(v interface{}, done chan<- error) {
+	rf0 := func(v interface{}, done chan<- error) {
 		done <- fmt.Errorf("%v", v)
 	}
-	recF1 := func(v interface{}, done chan<- error) {
+	rf1 := func(v interface{}, done chan<- error) {
 		panic("OH NO! Panic in recover function")
+	}
+	rf2 := func(v interface{}, done chan<- error) {
+		done <- goroutine.ErrPanicRecovered.WithValue(nil)
 	}
 
 	tests := []struct {
@@ -54,7 +57,7 @@ func TestGoroutine(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			result := recordStdOut(func() {
-				got := <-New(test.f).Go()
+				got := <-goroutine.New(test.f).Go()
 				assertError(t, got, test.want)
 			})
 			assertOutput(t, result, test.expected)
@@ -62,13 +65,19 @@ func TestGoroutine(t *testing.T) {
 	}
 
 	t.Run("Goroutine with a two param function and a custom recover function which recovered from a panic", func(t *testing.T) {
-		got := <-New(f3).WithRecover(recF0).Go()
+		got := <-goroutine.New(f3).WithRecover(rf0).Go()
 		want := "runtime error: integer divide by zero"
 		assertOutput(t, got.Error(), want)
 	})
 
 	t.Run("Goroutine with recover function which panics should never raise an application crash", func(t *testing.T) {
-		<-New(f4).WithRecover(recF1).Go()
+		<-goroutine.New(f4).WithRecover(rf1).Go()
+	})
+
+	t.Run("Goroutine panic recovered with plain ErrPanicRecovered", func(t *testing.T) {
+		got := <-goroutine.New(f4).WithRecover(rf2).Go()
+		want := "panic in goroutine recovered"
+		assertOutput(t, got.Error(), want)
 	})
 }
 
@@ -81,45 +90,20 @@ func TestGo(t *testing.T) {
 		}(10, 0)
 	}
 
-	originalRecoverFunc := GetDefaultRecoverFunc()
+	originalRecoverFunc := goroutine.GetDefaultRecoverFunc()
 
 	t.Run("Goroutine with a two param function which panicked in recover func and recovered", func(t *testing.T) {
-		SetDefaultRecoverFunc(func(v interface{}, done chan<- error) { panic("panic in recover func") })
-		got := <-Go(f)
-		want := &Error{msg: msgRecoverFuncPanicRecovered, v: "panic in recover func"}
+		goroutine.SetDefaultRecoverFunc(func(v interface{}, done chan<- error) { panic("panic in recover func") })
+		got := <-goroutine.Go(f)
+		want := goroutine.ErrRecoverFuncPanicRecovered.WithValue("panic in recover func")
 		if got == nil {
-			t.Errorf("Expected a Error, but got none")
+			t.Errorf("Expected a panicError, but got none")
 		}
 		assertError(t, got, want)
-		//assertOutput(t, got.Error(), "goroutine recover function panicked: panic in recover func")
 	})
 
 	// Restore defaultRecoverFunc
-	SetDefaultRecoverFunc(originalRecoverFunc)
-}
-
-func TestDefaultRecoverFunc(t *testing.T) {
-	t.Run("defaultRecoverFunc: panic value is an error", func(t *testing.T) {
-		done := make(chan error, 1)
-		defaultRecoverFunc(errors.New("panic value is an error"), done)
-		got := <-done
-		want := &Error{
-			msg: msgPanicRecovered,
-			v:   errors.New("panic value is an error"),
-		}
-		assertError(t, got, want)
-	})
-
-	t.Run("defaultRecoverFunc: panic value is an error message", func(t *testing.T) {
-		done := make(chan error, 1)
-		defaultRecoverFunc("panic value is an error message", done)
-		got := <-done
-		want := &Error{
-			msg: msgPanicRecovered,
-			v:   "panic value is an error message",
-		}
-		assertError(t, got, want)
-	})
+	goroutine.SetDefaultRecoverFunc(originalRecoverFunc)
 }
 
 func assertOutput(t *testing.T, got, want string) {
