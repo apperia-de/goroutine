@@ -1,3 +1,5 @@
+<img width="150" src="zorro.svg" alt="logo">
+
 # goroutine
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/sknr/goroutine)](https://goreportcard.com/report/github.com/sknr/goroutine)
@@ -108,3 +110,6 @@ goroutine.New(func() {
     log.Printf("Custom recover function in goroutine, with error: %v", v)
 }).Go()
 ```
+
+## Logo
+- Gopher by [Gophers](https://github.com/egonelbre/gophers)
